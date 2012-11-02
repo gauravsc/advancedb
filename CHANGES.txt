@@ -1,0 +1,8 @@
+
+2012-09-26:  New minor release version 0.2:
+				
+				* Added PostgreSQL connection
+				* Switched to OCamlFind for the build process (see Makefile)
+				* Added function Eval.is_prog for educational purpose
+
+2012-09-24:  First beta release, with basic parsing and fake SQL generation.

@@ -1,0 +1,17 @@
+Contributors:
+
+[put your names and @mail here]
+Guillaume Raschia <guillaume.raschia@univ-nantes.fr>
+
+
+Parser based on previous work from:
+Xavier Leroy <xavier.leroy@inria.fr>
+Julien Cohen >julien.cohen@univ-nantes.fr> 
+
+
+PostgreSQL connection based on previous work from:
+Alain Frisch <alain.frisch@lexifi.com>
+Markus Mottl <markus.mottl@gmail.com>
+
+
+Current maintainters:

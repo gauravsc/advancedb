@@ -1,0 +1,8 @@
+Q(x,y) :- R(x,y).
+?-Q(x,y).
+/
+
+==> SELECT * FROM Test; /* FIXME in the Eval.sql_stt function */
+
+
+

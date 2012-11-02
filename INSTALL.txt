@@ -1,0 +1,23 @@
+This is the INSTALL file for the YADI software distribution.
+
+Dependencies
+============
+
+In order to compile this software, you will need:
+* ocaml (>= 4.0.0)
+* PostgreSQL (>= 9.0)
+* postgresql-ocaml (>=2.0.1) 
+* findlib (>= 1.3.1)
+
+Installing
+==========
+
+1. Uncompress the source archive and go to the root directory 
+2. Run 'make'
+
+[Remark: autoconf and automake greatly help in the installation process. I recommend you use them for your own development.]
+
+Uninstalling
+============
+
+TODO

@@ -1,1 +1,48 @@
-The is the repo for advance databse project
+YADI - Yet Another Datalog Interpreter
+================================================
+                                        
+---------------------------------------------------------------------------
+
+What is YADI?
+-------------------------
+
+TODO
+
+Pre-requisites
+-------------------------
+
+It is madatory to connect a PostgreSQL server, with a role, a database and at least one populated table to formulate queries against that table.
+
+Howto randomly poppopulate a table (for testing puropose only): 
+	
+	psql> create table test as SELECT id, md5(random()::text) AS descr FROM
+          (SELECT * FROM generate_series(1,100) AS id) AS x;
+
+Usage
+-------------------------
+
+./yadi <connexion info>
+
+Example:
+
+./yadi "host=localhost port=5432 user=test password=test dbname=test_db"
+
+
+---------------------------------------------------------------------------
+
+Contact Information and Contributing
+------------------------------------
+
+In the case of bugs, feature requests, contributions and similar, please
+contact the maintainers:
+
+  * Guillaume Raschia <guillaume.raschia@univ-nantes.fr>
+
+Up-to-date information should be available at:
+<https://url-of-my-project>
+
+Enjoy!
+
+Guillaume Raschia in Nantes, FR on Sept 28, 2012
+
+

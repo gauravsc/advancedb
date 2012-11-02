@@ -1,0 +1,155 @@
+[Here must be defined your actual Datalog-like BNF grammar.]
+
+TODO
+
+*************************************************************
+Below is an example of a quite complete Datalog-like grammar.
+
+Source: The IRIS Reasoner Project
+http://iris-reasoner.org/syntax#grammar
+
+This page provides you with the definition of the IRIS Datalog syntax, 
+it has been generated from the BNF grammar.
+
+Productions
+
+program	= expr*
+
+expr	= {rule}	rule
+|	{fact}	fact
+|	{query}	query
+
+rule	= [head]: litlist ':-' [body]: litlist '.'
+
+fact	= predicate '.'
+
+query	= '?-' litlist '.'
+
+litlist	= literal
+|	{and}	litlist 'and' literal
+|	{comma}	litlist ',' literal
+
+literal	= {negated}	 '!' predicate
+|		predicate
+|	{builtin}	builtin
+
+predicate	= alpha+ paramlist?
+
+paramlist	= '(' termlist? ')'
+
+termlist	= {term}	term
+|		termlist ',' term
+
+intlist	=	intlist ',' t_int
+|	{int}	t_int
+
+term	=	{function}	alpha+ paramlist
+|	{var}	t_variable
+|	{integer}	t_int
+|	{integerl}	t_pre_integer '(' t_int ')'
+|	{string}	t_str
+|	{stringl}	t_pre_string '(' t_str ')'
+|	{decimal}	t_dec
+|	{decimall}	t_pre_decimal '(' t_dec ')'
+|	{sqname}	t_sq
+|	{sqnamel}	t_pre_sqname '(' t_sq ')'
+|	{iri}	t_unders t_str
+|	{iril}	t_pre_iri '(' t_str ')'
+|	{boolean}	t_pre_boolean '(' t_str ')'
+|	{double}	t_pre_double '(' t_dec ')'
+|	{float}	t_pre_float '(' t_dec ')'
+|	{date}	t_pre_date '(' intlist ')'
+|	{duration}	t_pre_duration '(' intlist ')'
+|	{datetime}	t_pre_datetime '(' intlist ')'
+|	{time}	t_pre_time '(' intlist ')'
+|	{gday}	t_pre_gday '(' t_int ')'
+|	{gmonth}	t_pre_gmonth '(' t_int ')'
+|	{gyear}	t_pre_gyear '(' t_int ')'
+|	{gyearmonth}	t_pre_gyearmonth '(' intlist ')'
+|	{gmonthday}	t_pre_gmonthday '(' intlist ')'
+|	{base64binary}	t_pre_base64 '(' t_str ')'
+|	{hexbinary}	t_pre_hex '(' t_str ')'
+
+builtin	= {binary}	[first]: term t_bin_op [second]: term
+|	{equals}	[first]: term t_eq [second]: term
+|	{ternary}	[first]: term t_ter_op [second]: term t_eq [third]: term
+
+
+Helpers
+
+all	=	 [ 0x0 .. 0xffff ]
+tab	=	9
+cr	=	13
+lf	=	10
+eol	=	cr lf | cr | lf
+alpha	=	 [ 'a' .. 'z' ] | [ 'A' .. 'Z' ]
+num	=	 [ '0' .. '9' ]
+alphanum	=	alpha | num
+anychar	=	alphanum | ' ' | tab | '/' | '#' | ':' | '.' | ',' | ';'
+min	=	'-'
+dot	=	'.'
+comma	=	','
+comment	=	'//' [ all - [ cr+ lf ] ]* eol
+blank	=	 ( ' ' | tab | eol )+
+delim	=	'''
+eq	=	'='
+ne	=	'!' eq
+add	=	'+'
+sub	=	'-'
+mul	=	'*'
+div	=	'/'
+lt	=	'<'
+le	=	lt eq
+gt	=	'>'
+ge	=	gt eq
+
+
+Tokens
+
+t_blank	=	blank
+t_comment	=	comment
+t_dot	=	dot
+t_impliedby	=	':-'
+t_and	=	'and'
+t_not	=	'not' | 'naf' | '!'
+t_comma	=	comma
+t_lpar	=	'('
+t_rpar	=	')'
+t_variable	=	'?' alphanum+
+'?-'	=	'?-'
+t_id	=	alpha+
+t_delim	=	delim
+t_unders	=	'_'
+t_bin_op	=	ne | lt | le | gt | ge
+t_ter_op	=	add | sub | mul | div
+t_eq	=	eq
+t_int	=	min? num+
+t_dec	=	min? num+ ( dot num+ )?
+t_str	=	delim anychar+ delim
+t_sq	=	alphanum+ '#' alphanum+
+t_pre_integer	=	'_integer'
+t_pre_string	=	'_string'
+t_pre_decimal	=	'_decimal'
+t_pre_double	=	'_double'
+t_pre_float	=	'_float'
+t_pre_base64	=	'_base64binary'
+t_pre_boolean	=	'_boolean'
+t_pre_date	=	'_date'
+t_pre_datetime	=	'_datetime'
+t_pre_duration	=	'_duration'
+t_pre_gday	=	'_gday'
+t_pre_gmonthday	=	'_gmonthday'
+t_pre_gmonth	=	'_gmonth'
+t_pre_gyearmonth	=	'_gyearmonth'
+t_pre_gyear	=	'_gyear'
+t_pre_hex	=	'_hexbinary'
+t_pre_iri	=	'_iri'
+t_pre_sqname	=	'_sqname'
+t_pre_time	=	'_time'
+
+
+Ignored Tokens
+
+t_blank
+t_comment
+
