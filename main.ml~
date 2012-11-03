@@ -6,7 +6,7 @@ open Postgresql ;;
 
 (* check for options of yadi command line *)
 let _ =
-  if Array.length Sys.argv >4 then (
+  if Array.length Sys.argv >3 then (
     Printf.printf "\
       Usage:  yadi <connection info>\n\
       Enter the Datalog Interpreter and connect to the PostgreSQL database\n\
