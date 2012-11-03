@@ -52,8 +52,7 @@
   | fact								{ failwith "fact: to be implemented" }
   ;
   
-  fact: 							{ }
-
+  fact: ANON							{ }
 
   rule:
   head IMPLIEDBY body DOT				{ Rule ($1,$3) }

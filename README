@@ -25,7 +25,7 @@ Usage
 
 Example:
 
-./yadi "host=localhost port=5432 user=test password=test dbname=test_db"
+./yadi "host=localhost port=5433 user=test password=test dbname=test_db"
 
 
 ---------------------------------------------------------------------------

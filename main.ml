@@ -71,7 +71,8 @@ let main () =
   print_conn_info c; flush stdout;
   c#set_notice_processor (fun s -> eprintf "postgresql error [%s]\n" s);
   try 
-   let lexbuf = Lexing.from_channel stdin in 
+   let chan= open_in "gaurav_test" in
+   let lexbuf = Lexing.from_channel chan in 
     while true do
 	    print_string "yadi$ "; flush stdout;
     	let ast = Parser.main Lexer.token lexbuf in 
