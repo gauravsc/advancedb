@@ -31,6 +31,13 @@ let string_of_rterm r = match r with
 
 
 (* support function for smart stringify of the AST - see to_string below *)
+let string_of_const r = match r with 	
+	| FactPred (x, [])		-> x ^ "()"
+	| FactPred (x, h::[]) 	-> x ^ "(" ^ h ^ ")"
+	| FactPred (x, h::t) 	-> x ^ "(" ^ h ^ List.fold_left (fun s acc -> s ^ "," ^ acc) "" t ^ ")"
+;;
+
+(* support function for smart stringify of the AST - see to_string below *)
 let rec string_of_term t = match t with 
 	| Rel r			-> string_of_rterm r
 	| Equal (s, i)		-> s ^ "=" ^ string_of_int i

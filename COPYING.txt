@@ -1,2 +1,7 @@
 [put licensing terms here. Take car of all the dependencies and "viral"
 behaviors of free software licenses linked with your code.]
+
+(* We haven't installed any other dependencies. 
+
+So Yadi is still governed by the same licencing as before. *)
+

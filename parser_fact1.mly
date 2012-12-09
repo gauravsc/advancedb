@@ -97,3 +97,18 @@
   |CONSTANT								{ $1 }
   ;
 
+  fact: 
+  factPredicate DOT	
+  ;						{ Fact $1 }
+
+  factPredicate:
+  RELNAME LPAREN constlist RPAREN		{ FactPred ($1, $3) }
+  ;
+
+  constlist: /* empty */					{ [] }
+  | const						{ $1 :: [] }
+  | const SEP constlist					{ $1 :: $3 }
+  ;
+
+ const: 
+  CONSTANT 						{ $1 }

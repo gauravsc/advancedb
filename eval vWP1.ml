@@ -99,7 +99,7 @@ let rec abc term_list = match term_list with
  
 
 (* This function filters all FACT statements  
-  NOT FINISHED 
+  NOT FINISHED *)
 let process_fact e = match e with
 	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
@@ -112,7 +112,7 @@ let process_fact e = match e with
 									| _ 			-> false) sttl)) []
 	)
 ;;
-*)
+
 
 
 (* The purpose of this function is to retrieve a string that would act as WHERE clause in final SELECT statement. So far it covers only equalities based on joins between the predicates i.e. tables 
@@ -121,78 +121,25 @@ Function compares one term e1 with a list of terms l2 and on each match builds a
 
 *)
 
-
-(* get value of a term *)
-let rec get_value t = match t with
-	| Equal	(s, i)	-> string_of_int i
-	| _ -> ""
-;;
-
-
-(* get type of term: 1 - Rel, 2 - Equal, 3 - Not, -1 - all the rest *)
-let get_termtype t = match t with
-	| Rel r			-> "1"
-	| Equal	(s, i)		-> "2"
-	| Not t			-> "3"
-;;
-
-
-let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
+let rec find_i s1 e1 s2 l2 r k =
      match l2 with [] -> ""
-       	  | h2::t2 -> (match tp1 with 
-			"1" -> (match tp2 with 
-				"1" -> 
-		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ "=" ^ s2 ^ ".a" ^ string_of_int k ^ 
-						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
-				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
-					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
-				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				|"2" -> 
-		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ "=" ^ s2 ^ 
-						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
-				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
-					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
-				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				)
-			|"2" -> (match tp2 with 
-				"1" -> 
-		                       (if String.compare e1 h2 = 0 
-				       then s2 ^ ".a" ^ string_of_int k ^ "=" ^ s1 ^
-						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
-				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
-					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
-				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				|"2" -> 
-		                       (if String.compare e1 h2 = 0 
-				       then 
-					  (if (s1 != s2) then "error" else  find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				)
-
-);;
+       	  | h2::t2 -> (if String.compare e1 h2 = 0 
+		       then s1 ^ ".a" ^ string_of_int r ^ "=" ^ s2 ^ ".a" ^ string_of_int k ^ 
+					(if String.compare (find_i s1 e1 s2 t2 r (k+1)) "" != 0 
+				         then " and "^(find_i s1 e1 s2 t2 r (k+1)) 
+					 else find_i s1 e1 s2 t2 r (k+1) ) 
+                       else find_i s1 e1 s2 t2 r (k+1));;
 
 
-let rec find_intersection s1 l1 tp1 s2 l2 tp2 r =
+let rec find_intersection s1 l1 s2 l2 r =
      match l1 with [] -> []
        | h1::t1 ->  (match l2 with [] -> []
-       				 | h2::t2 -> (if String.compare (find_i s1 h1 tp1 s2 l2 tp2 r 0) "" !=0 
-      						then find_i s1 h1 tp1 s2 l2 tp2 r 0 :: find_intersection s1 t1 tp1 s2 l2 tp2 (r+1) 
-						else find_intersection s1 t1 tp1 s2 l2 tp2 (r+1)));; 
+       				 | h2::t2 -> (if String.compare (find_i s1 h1 s2 l2 r 0) "" !=0 then find_i s1 h1 s2 l2 r 0 :: find_intersection s1 t1 s2 l2 (r+1) else find_intersection s1 t1 s2 l2 (r+1)));; 
 
-(* koristim trik za terme oblika EQUAL tako sto u ime predikata zapravo cuvam vrijednost varijable*)
+
 let rec inner_extract e1 l2 = match l2 with
 	| [] -> []
-	| h::t -> 
-	     (if (get_termtype e1 = "2") && (get_termtype h = "2")
-	     then List.append (find_intersection (get_value e1) (get_varlist e1) "2" (get_value h) (get_varlist h) "2" 0) (inner_extract e1 t)
-	     else if get_termtype e1 = "2"
-		then List.append (find_intersection (get_value e1) (get_varlist e1) "2" (get_predname h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)	
-	     else if get_termtype h = "2"
-	     then List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_value h) (get_varlist h) "2" 0) (inner_extract e1 t)
-	     else List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)
-);;
+	| h::t -> List.append (find_intersection (get_predname e1) (get_varlist e1) (get_predname h) (get_varlist h) 0) (inner_extract e1 t);;
 
 
 let rec outer_extract l = match l with
@@ -201,51 +148,34 @@ let rec outer_extract l = match l with
 	
 
 
-(* following three functions are used only for idb's in order to avoid equalities in matching string... 
--> so this is used to generate columns that will be output *)
+(* following three functions are used only for idb's in order to avoid equalities in matching string... *)
 
-let rec idb_find_i s1 e1 tp1 s2 l2 tp2 r k =
-     match l2 with [] -> ""
-       	  | h2::t2 -> (match tp2 with 
-				"1" -> 
-		                       (if String.compare e1 h2 = 0 
-				        then s2 ^ ".a" ^ string_of_int k  
-                      		        else idb_find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
-				|"2" -> ""
-				|"3" -> ""
-			);;
-
-
-
-(*
-
-let rec idb_find_i s1 e1 tp1 s2 l2 tp2 r k =
+let rec idb_find_i s1 e1 s2 l2 r k =
      match l2 with [] -> ""
        	  | h2::t2 -> (if String.compare e1 h2 = 0 
 		       then s2 ^ ".a" ^ string_of_int k  
                        else idb_find_i s1 e1 s2 t2 r (k+1));;
 
-*)
 
-
-let rec idb_find_intersection s1 l1 tp1 s2 l2 tp2 r =
+let rec idb_find_intersection s1 l1 s2 l2 r =
      match l1 with [] -> []
        | h1::t1 ->  (match l2 with [] -> []
-       				 | h2::t2 -> (if String.compare (idb_find_i s1 h1 tp1 s2 l2 tp2 r 0) "" !=0 then idb_find_i s1 h1 tp1 s2 l2 tp2 r 0 :: idb_find_intersection s1 t1 tp1 s2 l2 tp2 (r+1) else idb_find_intersection s1 t1 tp1 s2 l2 tp2 (r+1)));; 
+       				 | h2::t2 -> (if String.compare (idb_find_i s1 h1 s2 l2 r 0) "" !=0 then idb_find_i s1 h1 s2 l2 r 0 :: idb_find_intersection s1 t1 s2 l2 (r+1) else idb_find_intersection s1 t1 s2 l2 (r+1)));; 
 
 
 let rec idb_inner_extract e1 l2 = match l2 with
 	| [] -> []
-	| h::t -> List.append (idb_find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) (idb_inner_extract e1 t);;
+	| h::t -> List.append (idb_find_intersection (get_predname e1) (get_varlist e1) (get_predname h) (get_varlist h) 0) (idb_inner_extract e1 t);;
 
 (* end of - following three functions are used only for idb's in order to avoid equalities in matching string... *)
 
 
 
-(* this is used for creating FROM part of SQL statement, hence we skip all predicates that belong to equalities - 30/11/2012 *)
+
 let rec get_predname_termlist term_list = match term_list with
 		| [] -> []
-		| t::m -> ( if (get_termtype t) <> "2" then (get_predname t) :: (get_predname_termlist m) else (get_predname_termlist m));;
+		| t::m -> get_predname(t) :: (get_predname_termlist m);;
+
 
 
 (* This function filters all RULE statements and for each of them creates SELECT query to be executed, using previously defined 
@@ -254,8 +184,7 @@ let rec get_predname_termlist term_list = match term_list with
 let process_rule e = match e with
 	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
-			| Rule (r, t) 	-> "select " ^ (String.concat "," (idb_inner_extract (Rel r) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
-						(if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")
+			| Rule (r, t) 	-> "select " ^ (String.concat "," (idb_inner_extract (Rel r) t)) ^ " from " ^ (String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")
 			| _				-> invalid_arg "get_idb"
 		) (List.filter (fun r -> match r with
 									| Rule (_, _) 	-> true 
@@ -273,22 +202,6 @@ let sql_stt e =  String.concat " " (process_rule e);;
 
 
 (* SMALL CODE PARTS USED FOR TESTING PURPOSES - NOT RELEVANT FOR WP1 DELIVERABLES ASSESSMENT
-
-let process_rule e = match e with
-	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
-		match sl with 
-			| Rule (r, t) 	-> (match List.hd t with 
-					   | Rel(s) -> "select " ^ (String.concat "," (idb_inner_extract (Rel r) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
-						(if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")
-					   | Equal(k,l) -> "equal"
-					   | Not s -> "nageacija")
-			| _				-> invalid_arg "get_idb"
-		) (List.filter (fun r -> match r with
-									| Rule (_, _) 	-> true 
-									| _ 			-> false) sttl)) []
-	)
-;;
-
 
 let sql_stt e= match e with
 

@@ -1,4 +1,4 @@
-objects= expr.cmo parser.cmo lexer.cmo eval.cmo main.cmo proba1.cmo
+objects= expr.cmo parser.cmo lexer.cmo eval.cmo main.cmo
 packages= postgresql
 
 
@@ -22,9 +22,6 @@ lexer.ml:	lexer.mll parser.cmi expr.cmi
 
 main.cmo:	main.ml expr.cmo eval.cmo parser.cmo lexer.cmo
 	ocamlfind ocamlc -package $(packages) -thread -c main.ml
-
-proba1.cmo:	proba1.ml parser.cmo lexer.cmo
-	ocamlfind ocamlc -package $(packages) -thread -c proba1.ml
 
 %.cmo:	%.ml
 	ocamlc -c $<

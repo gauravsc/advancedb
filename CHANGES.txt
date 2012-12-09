@@ -1,4 +1,32 @@
 
+2012-11-30:
+Equalities implemented in file eval.ml (WHERE clause extended in SQL statement generation part).
+
+
+
+2012-11-17:
+
+Implemented significant changes in eval.ml part such that SELECT statement is created from provided datalog statements (CQ expressive power). 
+For more details please see limitation part of report.
+
+
+2012-11-15:
+
+
+Changes in main.ml file:
+- Modify to add function print_all_lines in order to print all the line in particular file at the destination path defined in filecontents*) 
+- Define variable filecontents in order to keep the value of destination path 
+- Add function dump_notification and listener to get the notification from backend to be part of dump_res function 
+- Modify the main function from "let lexbuf = Lexing.from_channel stdin in" to "let lexbuf = Lexing.from_string (print_all_lines filecontents) in" in order to get input from file instead of standard input
+
+
+
+2012-11-06: Changed grammar in parser.mly to accept "predicate DOT" as facts. Consequent necessary changes made in expr.ml and eval.ml files as well.	
+
+
+2012-10-27: Implemented option which enables Yadi to read the datalog query from input file and write result to the output file, if input and output filenames are provided as arguements to ./Yadi
+
+
 2012-09-26:  New minor release version 0.2:
 				
 				* Added PostgreSQL connection
@@ -6,3 +34,6 @@
 				* Added function Eval.is_prog for educational purpose
 
 2012-09-24:  First beta release, with basic parsing and fake SQL generation.
+
+
+

@@ -2,6 +2,7 @@ type token =
   | VAL of (int)
   | RELNAME of (string)
   | VARNAME of (string)
+  | CONSTANT of (string)
   | QMARK
   | DOT
   | IMPLIEDBY

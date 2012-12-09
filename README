@@ -25,7 +25,7 @@ Usage
 
 Example:
 
-./yadi "host=localhost port=5433 user=test password=test dbname=test_db"
+./yadi "host=localhost port=5432 user=test password=test dbname=test_db"
 
 
 ---------------------------------------------------------------------------
@@ -35,6 +35,11 @@ Contact Information and Contributing
 
 In the case of bugs, feature requests, contributions and similar, please
 contact the maintainers:
+
+Gaurav Singh Chauhan <gauravonline20@gmail.com> 
+Sandra Mitrovic <sandra.mitrovic1402@gmail.com> 
+Arpaporn Skunkittiyut <arpaporns@gmail.com> 
+Shalini Gangwar <iamshalinigangwar@gmail.com>
 
   * Guillaume Raschia <guillaume.raschia@univ-nantes.fr>
 
