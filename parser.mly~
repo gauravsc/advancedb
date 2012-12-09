@@ -97,7 +97,3 @@
   |CONSTANT								{ $1 }
   ;
 
-  fact:
-  | predicate DOT					{ Fact $1 } 
-  ;
-

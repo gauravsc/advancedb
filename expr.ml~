@@ -39,7 +39,7 @@ let rec string_of_term t = match t with
 
 (* support function for smart stringify of the AST - see to_string below *)
 let string_of_stt st = match st with
-	| Fact r		-> string_of_rterm r ^ ".\n"
+	| Fact r		-> string_of_const r ^ ".\n"
 	| Rule (p, [])		-> invalid_arg "string_of_stt: rule args are missing"
 	| Rule (p, h::[])	-> string_of_rterm p ^ ":-" ^ string_of_term h ^ ".\n"
 	| Rule (p, tel)		-> string_of_rterm p ^ " :- " ^ 
