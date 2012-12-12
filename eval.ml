@@ -246,39 +246,27 @@ let rec outer_extract l = match l with
 (* following three functions are used only for idb's in order to avoid equalities in matching string... 
 -> so this is used to generate columns that will be output *)
 
-let rec idb_find_i s1 e1 tp1 s2 l2 tp2 r k =
+let rec idb_find_i s1 vh1 s2 l2 tp2 k =
      match l2 with [] -> ""
        	  | h2::t2 -> (match tp2 with 
 				"relation" -> 
-		                       (if String.compare e1 h2 = 0 
+		                       (if String.compare vh1 h2 = 0 
 				        then s2 ^ ".a" ^ string_of_int k  
-                      		        else idb_find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
+                      		        else idb_find_i s1 vh1 s2 t2 tp2 (k+1))
 				|"equality" -> ""
 				|"negation" -> ""
 			);;
 
 
+let rec idb_find_intersection vh1 s1 l2 =
+     match l2 with [] -> []
+       	  | hl1::hl2 -> (if (String.compare (idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0) "") !=0 then idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0 :: [] else idb_find_intersection vh1 s1 hl2);;
+ 
 
-(*
-
-let rec idb_find_i s1 e1 tp1 s2 l2 tp2 r k =
-     match l2 with [] -> ""
-       	  | h2::t2 -> (if String.compare e1 h2 = 0 
-		       then s2 ^ ".a" ^ string_of_int k  
-                       else idb_find_i s1 e1 s2 t2 r (k+1));;
-
-*)
-
-
-let rec idb_find_intersection s1 l1 tp1 s2 l2 tp2 r =
-     match l1 with [] -> []
-       | h1::t1 ->  (match l2 with [] -> []
-       				 | h2::t2 -> (if String.compare (idb_find_i s1 h1 tp1 s2 l2 tp2 r 0) "" !=0 then idb_find_i s1 h1 tp1 s2 l2 tp2 r 0 :: idb_find_intersection s1 t1 tp1 s2 l2 tp2 (r+1) else idb_find_intersection s1 t1 tp1 s2 l2 tp2 (r+1)));; 
-
-
-let rec idb_inner_extract e1 l2 = match l2 with
+let rec idb_inner_extract e1 vh l2 = match vh with
 	| [] -> []
-	| h::t -> List.append (idb_find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) (idb_inner_extract e1 t);;
+	| vh1 :: vh2 -> List.append (idb_find_intersection vh1 (get_predname e1) l2) (idb_inner_extract e1 vh2 l2);;
+
 
 (* end of - following three functions are used only for idb's in order to avoid equalities in matching string... *)
 
@@ -296,7 +284,7 @@ let rec get_predname_termlist term_list = match term_list with
 let process_rule e = match e with
 	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
-			| Rule (r, t) 	-> "select " ^ (String.concat "," (idb_inner_extract (Rel r) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
+			| Rule (r, t) 	-> "select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
 						(if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")
 			| _				-> invalid_arg "get_idb"
 		) (List.filter (fun r -> match r with

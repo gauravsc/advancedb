@@ -26,7 +26,9 @@ let string_of_rterm r = match r with
 	List.fold_left (fun s acc -> s ^ "," ^ acc) "" t ^ ")"
 
 (*  promijenila Sandra 30/11/2012 jer inicijalna funkcija koju je dao prof. nije dobro vracala elemente liste (permutovala ih je) 
-	List.fold_right (fun s acc -> acc ^ "," ^ s) t "" ^ ")" *)
+	List.fold_right (fun s acc -> acc ^ "," ^ s) t "" ^ ")" 
+
+*)
 ;;
 
 
@@ -43,7 +45,7 @@ let string_of_stt st = match st with
 	| Rule (p, [])		-> invalid_arg "string_of_stt: rule args are missing"
 	| Rule (p, h::[])	-> string_of_rterm p ^ ":-" ^ string_of_term h ^ ".\n"
 	| Rule (p, tel)		-> string_of_rterm p ^ " :- " ^ 
-        List.fold_right (fun s acc -> acc ^ " and " ^ s) (List.map string_of_term tel) "" ^ ".\n"
+        List.fold_right (fun s acc -> acc ^ " and " ^ s) (List.map string_of_term tel) "" ^ ".\n" 
 	| Query r			-> "?- " ^ string_of_rterm r ^ ".\n"
 ;;
 
