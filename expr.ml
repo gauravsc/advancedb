@@ -49,6 +49,7 @@ let string_of_stt st = match st with
 	| Query r			-> "?- " ^ string_of_rterm r ^ ".\n"
 ;;
 
+
 (* smart stringify for AST *)
 let to_string e = match e with
 	| Prog [] 		-> invalid_arg "to_string"

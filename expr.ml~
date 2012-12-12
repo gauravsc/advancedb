@@ -23,10 +23,11 @@ let string_of_rterm r = match r with
 	| Pred (x, [])		-> x ^ "()"
 	| Pred (x, h::[]) 	-> x ^ "(" ^ h ^ ")"
 	| Pred (x, h::t) 	-> x ^ "(" ^ h ^
-	List.fold_right (fun s acc -> acc ^ "," ^ s) t "" ^ ")" 
+	List.fold_left (fun s acc -> s ^ "," ^ acc) "" t ^ ")"
 
 (*  promijenila Sandra 30/11/2012 jer inicijalna funkcija koju je dao prof. nije dobro vracala elemente liste (permutovala ih je) 
-	List.fold_left (fun s acc -> s ^ "," ^ acc) "" t ^ ")"
+	List.fold_right (fun s acc -> acc ^ "," ^ s) t "" ^ ")" 
+
 *)
 ;;
 

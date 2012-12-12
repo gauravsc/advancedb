@@ -267,7 +267,6 @@ let rec idb_inner_extract e1 vh l2 = match vh with
 	| [] -> []
 	| vh1 :: vh2 -> List.append (idb_find_intersection vh1 (get_predname e1) l2) (idb_inner_extract e1 vh2 l2);;
 
-
 (* end of - following three functions are used only for idb's in order to avoid equalities in matching string... *)
 
 
@@ -275,8 +274,20 @@ let rec idb_inner_extract e1 vh l2 = match vh with
 (* this is used for creating FROM part of SQL statement, hence we skip all predicates that belong to equalities - 30/11/2012 *)
 let rec get_predname_termlist term_list = match term_list with
 		| [] -> []
-		| t::m -> ( if (get_termtype t) = "relation" then (get_predname t) :: (get_predname_termlist m) else (get_predname_termlist m));;
+		| t::m -> ( if (get_termtype t) = "relation" then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
 
+
+(*
+old version:
+( if (get_termtype t) = "relation" then (get_predname t) :: (get_predname_termlist m) else (get_predname_termlist m));;
+*)
+
+
+
+let rec attribute_name_head q i = match q with
+	| 0 -> [] 
+	| m -> (("a" ^ string_of_int (i-q) ):: attribute_name_head (q-1) i)
+;; 
 
 (* This function filters all RULE statements and for each of them creates SELECT query to be executed, using previously defined 
   idb_inner_extract and outer_extract functions *)
@@ -284,8 +295,9 @@ let rec get_predname_termlist term_list = match term_list with
 let process_rule e = match e with
 	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
-			| Rule (r, t) 	-> "select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
+			| Rule (r, t) 	-> "create or replace view " ^ (get_predname (Rel r)) ^ "(" ^ (String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 								    (String.concat "," (get_predname_termlist t)) ^ 
 						(if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")
+
 			| _				-> invalid_arg "get_idb"
 		) (List.filter (fun r -> match r with
 									| Rule (_, _) 	-> true 
