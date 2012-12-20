@@ -9,6 +9,10 @@ type token =
   | AND
   | NOT
   | EQ
+  | LT
+  | GT
+  | LE
+  | GE
   | LPAREN
   | RPAREN
   | SEP

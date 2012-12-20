@@ -19,7 +19,7 @@
   
 %token QMARK DOT IMPLIEDBY
 %token AND NOT
-%token EQ
+%token EQ LT GT LE GE
 %token LPAREN RPAREN SEP
 %token EOP
 %token ANON   /* fake token to stop the grammar in the fact rule */
@@ -78,6 +78,10 @@
   | predicate							{ Rel $1 }
   | NOT predicate 						{ Not (Rel $2) }
   | equality							{ $1 }
+  | lessThanInequality						{ $1 }
+  | greaterThanInequality					{ $1 }
+  | lessOrEqualInequality					{ $1 }
+  | greaterOrEqualInequality					{ $1 }
   | NOT equality					    { Not $2 }
   ;
 
@@ -87,6 +91,19 @@
 
   equality:	
   VARNAME EQ VAL						{ Equal ($1, $3) }
+
+
+  lessThanInequality:	
+  VARNAME LT VAL						{ LessThan ($1, $3) }
+
+  greaterThanInequality:	
+  VARNAME GT VAL						{ GreaterThan ($1, $3) }
+
+  lessOrEqualInequality:	
+  VARNAME LE VAL						{ LessOrEqual ($1, $3) }
+
+  greaterOrEqualInequality:	
+  VARNAME GE VAL						{ GreaterOrEqual ($1, $3) }
 
   termlist: /* empty */					{ [] }
   | term								{ $1 :: [] }

@@ -16,7 +16,7 @@
 										| "NOT" -> NOT (* 06/12/2012 *)				
 										| _ 	-> VARNAME(lxm)
 									}
-    | ['\"'][a-z]+['\"'] as cons		{ CONSTANT(cons) } (* 06/12/2012 *)
+    | ['\"']['a'-'z']+['\"'] as cons		{ CONSTANT(cons) } (* 06/12/2012 *)
     | ":-"          				{ IMPLIEDBY }
     | "?-"            				{ QMARK }  (* query mark *)
     | '.'            				{ DOT }    (* end of rule or query *)
@@ -24,4 +24,8 @@
     | '('            				{ LPAREN }
     | ')'            				{ RPAREN }
     | '='            				{ EQ }
+    | '<'            				{ LT }
+    | '>'            				{ GT }
+    | "<="            				{ LE }
+    | ">="            				{ GE }
     | '/'            				{ EOP }	

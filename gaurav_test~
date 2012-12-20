@@ -1,4 +1,3 @@
-Q(x,y,z):-P(x,y,z) and S(x,y).
+Q(x,y,z):-P(x,y,z) and S(x,y) and x<5.
 ?-Q(x,y,z).
 /
-

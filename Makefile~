@@ -3,7 +3,7 @@ packages= postgresql
 
 
 yadi:	$(objects)
-	ocamlfind ocamlc -package $(packages) -thread -linkpkg str.cma $(objects) -o yadi 
+	ocamlfind ocamlc -package $(packages) -thread -linkpkg str.cma array.cmi $(objects) -o yadi 
 
 
 
@@ -31,7 +31,6 @@ main.cmo:	main.ml expr.cmo eval.cmo parser.cmo lexer.cmo
 
 
 eval.cmo:	expr.cmo  
-
 
 
 clean :

@@ -6,6 +6,10 @@ type expr =
 and term =
 	| Rel of rterm
 	| Equal of string * int
+	| LessThan of string * int
+	| GreaterThan of string * int
+	| LessOrEqual of string * int
+	| GreaterOrEqual of string * int
 	| Not of term
 and rterm =
 	| Pred of string * string list
@@ -36,6 +40,10 @@ let string_of_rterm r = match r with
 let rec string_of_term t = match t with 
 	| Rel r			-> string_of_rterm r
 	| Equal (s, i)		-> s ^ "=" ^ string_of_int i
+	| LessThan (s, i)	-> s ^ "<" ^ string_of_int i
+	| GreaterThan (s, i)	-> s ^ ">" ^ string_of_int i
+	| LessOrEqual (s, i)	-> s ^ "<=" ^ string_of_int i
+	| GreaterOrEqual (s, i)	-> s ^ ">=" ^ string_of_int i
 	| Not t			-> "not " ^ string_of_term t
 ;;
 
