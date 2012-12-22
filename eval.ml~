@@ -201,7 +201,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ s2 ^ 
+				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ "'" ^ s2 ^ "'" ^
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -210,7 +210,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 			|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> (match tp2 with 
 				("relation"|"negation") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s2 ^ ".a" ^ string_of_int k ^ (get_boolean_sign tp1) ^ s1 ^
+				       then s2 ^ ".a" ^ string_of_int k ^ (get_boolean_sign tp1) ^ "'" ^ s1 ^ "'" ^
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -236,7 +236,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ s2 ^ 
+				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ "'" ^ s2 ^ "'" ^ 
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -339,18 +339,27 @@ let rec check_predicate a pr = match a with
 
 
 let process_rule e = match e with
-	| Prog sttl	-> let a = [] in ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
+	| Prog sttl	-> let a = ref [] in ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
-			| Rule (r, t) 	-> if (check_predicate a (get_predname (Rel r)) = 0) then 
-						( (get_predname (Rel r)) :: a;			       
+			| Rule (r, t) 	-> if (check_predicate (!a) (get_predname (Rel r)) = 0) then 
+						(a := ((get_predname (Rel r)) :: (!a));
 						"create view " ^ (get_predname (Rel r)) ^ "(" ^ 
 (String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
 (String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "");)
-					   else "alter ";
+					   else if List.length (idb_inner_extract (Rel r) (get_varlist (Rel r)) t) = List.length (get_varlist (Rel r)) then
+						  (* "SET client_min_messages TO WARNING;" ^ *)
+						  ";create table " ^ (get_predname (Rel r)) ^ "_tbl as select * from " ^ (get_predname (Rel r)) 							 ^ "; create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ 
+						 (get_predname (Rel r)) ^ "_tbl union all select " ^ (String.concat "," (idb_inner_extract (Rel r) 							 (get_varlist (Rel r)) t)) ^ " from " ^ 
+(String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "") ^
+";drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp;create table " ^ (get_predname (Rel r)) ^ "_tbl_temp as select * from " ^
+(get_predname (Rel r)) ^ "; drop table " ^ (get_predname (Rel r)) ^ "_tbl cascade; create view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp;"
+						else "error -> incompatible number of arguments in head and body";
+			| Query q 	-> "select * from " ^ (get_predname (Rel q))  ^ ";"
 			| _				-> invalid_arg "get_idb"
-		) (List.filter (fun r -> match r with
+		) (List.rev (List.filter (fun r -> match r with
 									| Rule (_, _) 	-> true 
-									| _ 			-> false) sttl)) []
+									| Query _ 	-> true 
+									| _ 			-> false) sttl))) [] 
 	)
 ;;
 
