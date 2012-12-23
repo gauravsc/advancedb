@@ -83,7 +83,7 @@ print_string "yadi$ "; flush stdout;
 	print_endline (Expr.to_string ast); flush stdout;
 	let sql = (if Eval.is_prog ast then Eval.sql_stt ast else invalid_arg "main" ) in print_endline(sql);
 c#send_query sql; 
-(* dump_res c *)
+dump_res c 
 	done
 	with Eof ->
    c#finish; exit 0

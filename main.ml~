@@ -81,9 +81,7 @@ let main () =
 print_string "yadi$ "; flush stdout;
      let ast = Parser.main Lexer.token lexbuf in
 	print_endline (Expr.to_string ast); flush stdout;
-	let sql = "create view Q as select * from P;select * from Q;"
- in print_endline(sql);
-(*	let sql = (if Eval.is_prog ast then Eval.sql_stt ast else invalid_arg "main" ) in print_endline(sql);*)
+	let sql = (if Eval.is_prog ast then Eval.sql_stt ast else invalid_arg "main" ) in print_endline(sql);
 c#send_query sql; 
 (* dump_res c *)
 	done

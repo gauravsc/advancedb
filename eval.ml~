@@ -334,6 +334,22 @@ let rec check_predicate a pr = match a with
 
 
 
+let rec is_recursive r t = match t with
+	| [] -> false
+	| head::tail -> if (get_predname (Rel r)) = (get_predname head) then true else (is_recursive r tail)
+;;
+
+
+let rec rename_predicate_in_body l old_name = match l with
+	| [] -> []
+	| h::t -> if get_predname h = old_name then Rel (Pred ((old_name ^ "_rec_temp"), get_varlist h)) :: (rename_predicate_in_body t old_name) else h :: (rename_predicate_in_body t old_name);;
+
+
+let rename_predicate_in_head r old_name = match (get_predname (Rel r)) with 
+					   | old_name -> Rel (Pred ((old_name ^ "_rec_temp"), get_varlist (Rel r)))
+					   | _ -> Rel r
+;;
+
 (* This function filters all RULE statements and for each of them creates SELECT query to be executed, using previously defined 
   idb_inner_extract and outer_extract functions *)
 
@@ -345,14 +361,17 @@ let process_rule e = match e with
 						(a := ((get_predname (Rel r)) :: (!a));
 						"create view " ^ (get_predname (Rel r)) ^ "(" ^ 
 (String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
-(String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "");)
+(String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")^";";)
+					   else if is_recursive r t then
+						"create view " ^ (get_predname (Rel r)) ^ "_rec_temp_2 as (with recursive "  ^ (get_predname (Rel r)) ^ "_rec_temp(" ^ 
+(String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as (" ^
+"select * from " ^ (get_predname (Rel r)) ^ " union all select " ^ (String.concat "," (idb_inner_extract (rename_predicate_in_head r (get_predname (Rel r))) (get_varlist (rename_predicate_in_head r (get_predname (Rel r)))) (rename_predicate_in_body t (get_predname (Rel r))) )) ^ " from " ^ (String.concat "," (get_predname_termlist (rename_predicate_in_body t (get_predname (Rel r))))) ^ (if outer_extract (rename_predicate_in_body t (get_predname (Rel r))) != [] then " where " ^ (String.concat " and " (outer_extract (rename_predicate_in_body t (get_predname (Rel r))))) else "") ^ ") \n select * from " ^ (get_predname (Rel r)) ^ "_rec_temp); \n drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp_2; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp_2 as select * from " ^ (get_predname (Rel r)) ^ "_rec_temp_2; \n drop view " ^ (get_predname (Rel r)) ^ "_rec_temp_2 cascade; \n create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp_2;"
 					   else if List.length (idb_inner_extract (Rel r) (get_varlist (Rel r)) t) = List.length (get_varlist (Rel r)) then
 						  (* "SET client_min_messages TO WARNING;" ^ *)
-						  ";create table " ^ (get_predname (Rel r)) ^ "_tbl as select * from " ^ (get_predname (Rel r)) 							 ^ "; create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ 
-						 (get_predname (Rel r)) ^ "_tbl union all select " ^ (String.concat "," (idb_inner_extract (Rel r) 							 (get_varlist (Rel r)) t)) ^ " from " ^ 
+						  "create table " ^ (get_predname (Rel r)) ^ "_tbl as select * from " ^ (get_predname (Rel r)) 							 ^ "; create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ 
+						 (get_predname (Rel r)) ^ "_tbl union all select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
 (String.concat "," (get_predname_termlist t)) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "") ^
-";drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp;create table " ^ (get_predname (Rel r)) ^ "_tbl_temp as select * from " ^
-(get_predname (Rel r)) ^ "; drop table " ^ (get_predname (Rel r)) ^ "_tbl cascade; create view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp;"
+"; drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp as select * from " ^ (get_predname (Rel r)) ^ "; drop table " ^ (get_predname (Rel r)) ^ "_tbl cascade; create view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp;"
 						else "error -> incompatible number of arguments in head and body";
 			| Query q 	-> "select * from " ^ (get_predname (Rel q))  ^ ";"
 			| _				-> invalid_arg "get_idb"
