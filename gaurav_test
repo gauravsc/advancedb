@@ -1,5 +1,5 @@
-Q(x,y):-P(x,y).
 Q(x,y):-S(x,y).
+Q(x,z):-Q(x,y) and Q(y,z).
 ?-Q(x,y).
 /
 
