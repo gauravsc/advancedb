@@ -286,12 +286,11 @@ let rec outer_extract l = match l with
 let rec idb_find_i s1 vh1 s2 l2 tp2 k =
      match l2 with [] -> ""
        	  | h2::t2 -> (match tp2 with 
-				"relation" -> 
+				|("relation"|"negation") -> 
 		                       (if String.compare vh1 h2 = 0 
 				        then s2 ^ ".a" ^ string_of_int k  
                       		        else idb_find_i s1 vh1 s2 t2 tp2 (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> ""
-				|"negation" -> ""
 			);;
 
 
@@ -311,7 +310,7 @@ let rec idb_inner_extract e1 vh l2 = match vh with
 (* this is used for creating FROM part of SQL statement, hence we skip all predicates that belong to equalities - 30/11/2012 *)
 let rec get_predname_termlist term_list = match term_list with
 		| [] -> []
-		| t::m -> ( if (get_termtype t) = "relation" then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
+		| t::m -> ( if ((get_termtype t) = "relation" || (get_termtype t) = "negation") then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
 
 
 (*
@@ -373,21 +372,27 @@ let process_rule e = match e with
 	| Prog sttl	-> let a = ref [] in ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
 			| Rule (r, t) 	-> if (check_predicate (!a) (get_predname (Rel r)) = 0) then 
+(* here we just check if idb shows for the first time and if so we generate the select query; 
+remove duplicates -> used to handle cases when 2 same edb's appear in the body of same rule (in the FROM clause) 
+attribute_name_head -> used to create list of attribute name i.e. a0, a1, a2
+*)
 						(a := ((get_predname (Rel r)) :: (!a));
 						"drop view if exists " ^ (get_predname (Rel r)) ^ "; create view " ^ (get_predname (Rel r)) ^ "(" ^ 
 (String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
 (String.concat "," (remove_duplicates (get_predname_termlist t))) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "")^";";)
-					   else if is_recursive r t then
+					   else if is_recursive r t then (* HERE STARTS RECURSION HANDLING *)
+(* basically here we do the similar as in union part except that here we create recursive view named idb_rec_temp from previous data (idb view) union all with what we get in current rule; we had to use rename_predicate_in_body and rename_predicate_in_head to swap idb which we have in rule with actual idb view that we have in DB (idb_rec_temp) *)
 						"create view " ^ (get_predname (Rel r)) ^ "_rec_temp_2 as (with recursive "  ^ (get_predname (Rel r)) ^ "_rec_temp(" ^ 
 (String.concat "," (attribute_name_head (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ ") as (" ^
-"select * from " ^ (get_predname (Rel r)) ^ " union all select " ^ (String.concat "," (idb_inner_extract (rename_predicate_in_head r (get_predname (Rel r))) (get_varlist (rename_predicate_in_head r (get_predname (Rel r)))) (rename_predicate_in_body t (get_predname (Rel r))) )) ^ " from " ^ (String.concat "," (remove_duplicates (get_predname_termlist (rename_predicate_in_body t (get_predname (Rel r)))))) ^ (if outer_extract (rename_predicate_in_body t (get_predname (Rel r))) != [] then " where " ^ (String.concat " and " (outer_extract (rename_predicate_in_body t (get_predname (Rel r))))) else "") ^ ") \n select * from " ^ (get_predname (Rel r)) ^ "_rec_temp); \n drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp_2; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp_2 as select * from " ^ (get_predname (Rel r)) ^ "_rec_temp_2; \n drop view " ^ (get_predname (Rel r)) ^ "_rec_temp_2 cascade; \n create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp_2;"
-					   else if List.length (idb_inner_extract (Rel r) (get_varlist (Rel r)) t) = List.length (get_varlist (Rel r)) then
+"select * from " ^ (get_predname (Rel r)) ^ " union select " ^ (String.concat "," (idb_inner_extract (rename_predicate_in_head r (get_predname (Rel r))) (get_varlist (rename_predicate_in_head r (get_predname (Rel r)))) (rename_predicate_in_body t (get_predname (Rel r))) )) ^ " from " ^ (String.concat "," (remove_duplicates (get_predname_termlist (rename_predicate_in_body t (get_predname (Rel r)))))) ^ (if outer_extract (rename_predicate_in_body t (get_predname (Rel r))) != [] then " where " ^ (String.concat " and " (outer_extract (rename_predicate_in_body t (get_predname (Rel r))))) else "") ^ ") \n select * from " ^ (get_predname (Rel r)) ^ "_rec_temp); \n drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp_2; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp_2 as select * from " ^ (get_predname (Rel r)) ^ "_rec_temp_2; \n drop view " ^ (get_predname (Rel r)) ^ "_rec_temp_2 cascade; \n create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp_2;"  (* HERE ENDS RECURSION HANDLING *)
+					   else if List.length (idb_inner_extract (Rel r) (get_varlist (Rel r)) t) = List.length (get_varlist (Rel r)) (* HERE STARTS UNION HANDLING *) then
+(* remove duplicates does the same as in the simplest (1st case); all the rest is consequence of using views for storing idbs and fact that we cannot use idb as subquery to calculate it's new value  *)
 						  (* "SET client_min_messages TO WARNING;" ^ *)
 						  "create table " ^ (get_predname (Rel r)) ^ "_tbl as select * from " ^ (get_predname (Rel r)) 							 ^ "; create or replace view " ^ (get_predname (Rel r)) ^ " as select * from " ^ 
-						 (get_predname (Rel r)) ^ "_tbl union all select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
+						 (get_predname (Rel r)) ^ "_tbl union select " ^ (String.concat "," (idb_inner_extract (Rel r) (get_varlist (Rel r)) t)) ^ " from " ^ 
 (String.concat "," (remove_duplicates (get_predname_termlist t))) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "") ^
 "; drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp as select * from " ^ (get_predname (Rel r)) ^ "; drop table " ^ (get_predname (Rel r)) ^ "_tbl cascade; create view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp;"
-						else "error -> incompatible number of arguments in head and body";
+						else "error -> incompatible number of arguments in head and body"; (* HERE ENDS UNION HANDLING *)
 			| Query q 	-> "select * from " ^ (get_predname (Rel q))  ^ ";"
 			| _				-> invalid_arg "get_idb"
 		) (List.rev (List.filter (fun r -> match r with

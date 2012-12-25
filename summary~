@@ -1,10 +1,60 @@
 
-recursion
+recursion - DONE
 stratified negation - ???
 
-
-Built-in boolean predicates and 
+Built-in boolean predicates - DONE   
 anonymous variables and values as predicate arguments
 
 L3. Type and aggregate functions - 1. ??? 2. tough
 L4. DDL (Data Definition Language) part 
+
+
+
+
+---------------------------------------------------------------
+
+
+za Lin i Shalini, testirati:
+
+Q(x,y) :- P(x,z) and S(z,t) and U(t,u) and u=10 and x=2 and y=1.
+?-Q(x,y).
+/
+?- Q(x,y).
+Q(x,y) :-  and P(x,z) and S(z,t) and U(t,u) and u=10 and x=2 and y=1.
+
+select P.a0 from U,S,P where S.a0=P.a1 and U.a0=S.a1 and U.a1=10 and P.a0=2
+
+
+
+
+
+
+
+
+Q(x,y):-P(x,y) and x=3.
+Q(x,y):-P(x,z) and S(z,y).
+?-Q(x,y).
+/
+
+
+create table Q_tbl as select * from Q; 
+create or replace view Q as select * from Q_tbl union select P.a0,S.a1 from P,S where S.a0=P.a1;
+drop table if exists Q_tbl_temp;
+create table Q_tbl_temp as select * from Q; 
+drop table Q_tbl cascade; 
+create view Q as select * from Q_tbl_temp; 
+
+
+create table Q_tbl as select * from Q; 
+create or replace view Q as select * from Q_tbl union select P.a0,P.a1 from P where P.a0='3';
+drop table if exists Q_tbl_temp;
+create table Q_tbl_temp as select * from Q; 
+drop table Q_tbl cascade; 
+create view Q as select * from Q_tbl_temp;
+Failure("error: unexpected status")
+
+Returns error because of NOTICE:
+NOTICE:  drop cascades to view q
+Query returned successfully with no result in 535 ms.
+
+
