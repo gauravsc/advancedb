@@ -183,6 +183,12 @@ let get_boolean_sign tp = match tp with
 ;;
 
 
+let is_not_anonymous e1 h2 = match (e1,h2) with
+	| ("_","_") -> false
+	| (_,_) -> true
+;;
+
+
 let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
      match l2 with [] -> ""
        	  | h2::t2 -> (match tp1 with 
@@ -193,7 +199,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
-		                       else if String.compare e1 h2 = 0 
+		                       else if (String.compare e1 h2 = 0 && is_not_anonymous e1 h2) 
 				       then s1 ^ ".a" ^ string_of_int r ^ "=" ^ s2 ^ ".a" ^ string_of_int k ^ 
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
@@ -228,7 +234,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
-		                       else if String.compare e1 h2 = 0 
+		                       else if (String.compare e1 h2 = 0 && is_not_anonymous e1 h2) 
 				       then s1 ^ ".a" ^ string_of_int r ^ "=" ^ s2 ^ ".a" ^ string_of_int k ^ 
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 

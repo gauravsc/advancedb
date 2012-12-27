@@ -1,5 +1,7 @@
-Q(x,y):-S(x,y).
-Q(x,z):-Q(x,y) and not R(y,z).
+Z(x,y):-S(x,y).
+Z(x,z):-Q(x,y) and not R(y,z).
+
+Q(x,y):-S(x,_,z) and R(z,y,_).
 ?-Q(x,y).
 /
 
