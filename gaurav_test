@@ -1,7 +1,6 @@
-Z(x,y):-S(x,y).
+R(x,y):-S(x,y).
 Z(x,z):-Q(x,y) and not R(y,z).
-
-Q(x,y):-S(x,_,z) and not R(z,y,_).
+Q(x,y):-S(x,_,z) and not T(z,y,_).
 ?-Q(x,y).
 /
 

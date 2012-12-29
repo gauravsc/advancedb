@@ -370,6 +370,16 @@ let remove_duplicates l =
   in go l []
 
 
+
+let rec is_stratified l b = match b with
+	| [] -> true
+	| h::t -> (match h with 
+			| Not r -> if (check_predicate l (get_predname r) = 0) then false else is_stratified l t
+			| _ -> is_stratified l t 
+		  ) 
+;;        
+
+
 (* This function filters all RULE statements and for each of them creates SELECT query to be executed, using previously defined 
   idb_inner_extract and outer_extract functions *)
 
@@ -377,7 +387,8 @@ let remove_duplicates l =
 let process_rule e = match e with
 	| Prog sttl	-> let a = ref [] in ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
 		match sl with 
-			| Rule (r, t) 	-> if (check_predicate (!a) (get_predname (Rel r)) = 0) then 
+			| Rule (r, t) 	-> if not (is_stratified (!a) t) then "\n" 
+					   else if (check_predicate (!a) (get_predname (Rel r)) = 0) then 
 (* here we just check if idb shows for the first time and if so we generate the select query; 
 remove duplicates -> used to handle cases when 2 same edb's appear in the body of same rule (in the FROM clause) 
 attribute_name_head -> used to create list of attribute name i.e. a0, a1, a2
@@ -399,8 +410,10 @@ attribute_name_head -> used to create list of attribute name i.e. a0, a1, a2
 (String.concat "," (remove_duplicates (get_predname_termlist t))) ^ (if outer_extract t != [] then " where " ^ (String.concat " and " (outer_extract t)) else "") ^
 "; drop table if exists " ^ (get_predname (Rel r)) ^ "_tbl_temp; create table " ^ (get_predname (Rel r)) ^ "_tbl_temp as select * from " ^ (get_predname (Rel r)) ^ "; drop table " ^ (get_predname (Rel r)) ^ "_tbl cascade; create view " ^ (get_predname (Rel r)) ^ " as select * from " ^ (get_predname (Rel r)) ^ "_tbl_temp;"
 						else "error -> incompatible number of arguments in head and body"; (* HERE ENDS UNION HANDLING *)
-			| Query q 	-> "select * from " ^ (get_predname (Rel q))  ^ ";"
-			| _				-> invalid_arg "get_idb"
+			| Query q 	-> if (check_predicate (!a) (get_predname q) = 1) then 
+						"select * from " ^ (get_predname (Rel q))  ^ ";"
+					   else ""
+			| _		-> invalid_arg "get_idb"
 		) (List.rev (List.filter (fun r -> match r with
 									| Rule (_, _) 	-> true 
 									| Query _ 	-> true 
