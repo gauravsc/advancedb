@@ -34,8 +34,8 @@ let conn_string= ref "";;
 let speclist = [
     ("-c", Arg.String   (fun c -> conn_string:= c), ": connection info follows -c");
     ("-i", Arg.String   (fun i -> (input_chan := (open_in i))), ": input file name follows -i");
-    ("-o", Arg.String (fun o -> (output_chan :=(open_out o))),      ": output file name follows -o");
-    ("-k", Arg.Unit    (fun () -> (interactive:= true)),      ": the interactive mode parameter");
+    ("-o", Arg.String (fun o -> (output_chan :=(open_out o))),  ": output file name follows -o");
+    ("-k", Arg.Unit    (fun () -> (interactive:= false)),        ": the interactive mode parameter");
   ];;
 
 
@@ -86,7 +86,40 @@ let rec dump_res conn =
   | None -> ()
 ;;
 
+
+let create_query_for_line line = try 
+                       if (Str.search_forward (Str.regexp ":-") line 0) > -1 
+                       then "?-" ^ (List.nth (Str.split (Str.regexp ":-") line) 0) ^ "./"
+                       else "" 
+                    with Not_found -> ""
+;;
+
+
 let conninfo = !(conn_string);;
+
+
+let main_interactive c = 
+  try
+   print_string "yadi$ "; flush stdout;
+   let chan = ref (read_line()) in
+    while (!chan) != "" do 
+    let line_to_process = (!chan) ^ "\n" ^ (create_query_for_line (!chan)) in 
+    let lexbuf = Lexing.from_string line_to_process in
+      let ast = Parser.main Lexer.token lexbuf in
+	print_endline (Expr.to_string ast); flush stdout;
+	let sql = (if Eval.is_prog ast then Eval.sql_stt ast else invalid_arg "main" ) in print_endline(sql);
+(* c#send_query sql;
+dump_res c; *)
+	print_string "yadi$ "; flush stdout;
+	chan := read_line();
+        done 
+	with Eof ->
+   (* c#finish; *) exit 0
+
+;;
+
+
+
 (* everything is done here *)
 let main () =
   let c = new connection ~conninfo () in
@@ -94,6 +127,7 @@ let main () =
   c#set_notice_processor (fun s -> eprintf "postgresql error [%s]\n" s);
   try
    (*let chan= if (Array.length Sys.argv) = 1 then stdin else open_in Sys.argv.(2) in*)
+   if !interactive then (main_interactive c) else (
    let chan= !(input_chan) in
    let lexbuf = Lexing.from_channel chan in
     while true do
@@ -103,7 +137,7 @@ print_string "yadi$ "; flush stdout;
 	let sql = (if Eval.is_prog ast then Eval.sql_stt ast else invalid_arg "main" ) in print_endline(sql);
 (* c#send_query sql;*)
 dump_res c 
-	done
+	done)
 	with Eof ->
    c#finish; exit 0
 
