@@ -6,7 +6,7 @@ open Postgresql ;;
 
 (* check for options of yadi command line *)
 let _ =
-  if Array.length Sys.argv >4 then (
+  if Array.length Sys.argv >7 then (
     Printf.printf "\
 Usage: yadi <connection info>\n\
 Enter the Datalog Interpreter and connect to the PostgreSQL database\n\
@@ -24,9 +24,26 @@ Example:\n\
 ;;
 
 (* assign postgreSQL connection parameters to conninfo variable *)
-let conninfo = Sys.argv.(1) ;;
-let input_chan= if Array.length Sys.argv >2 then (open_in Sys.argv.(2)) else stdin;;
-let output_chan=if Array.length Sys.argv >3 then (open_out Sys.argv.(3)) else stdout;;
+(*let conninfo = Sys.argv.(2) ;;*)
+let input_chan = ref stdin;;
+let output_chan = ref stdout;;
+let interactive= ref true;;
+let conn_string= ref "";;
+
+(* To parse arguements in teh inout command to Yadi*)
+let speclist = [
+    ("-c", Arg.String   (fun c -> conn_string:= c), ": connection info follows -c");
+    ("-i", Arg.String   (fun i -> (input_chan := (open_in i))), ": input file name follows -i");
+    ("-o", Arg.String (fun o -> (output_chan :=(open_out o))),      ": output file name follows -o");
+    ("-k", Arg.Unit    (fun () -> (interactive:= true)),      ": the interactive mode parameter");
+  ];;
+
+
+Arg.parse speclist (fun x -> raise (Arg.Bad ("Bad argument : " ^ x)))
+"bad arguement";
+    ;;
+    
+
 (* pretty print connection informations *)
 let print_conn_info conn =
   printf "dbname = %s\n" conn#db;
@@ -46,12 +63,12 @@ let print_res conn res =
   match res#status with
   | Empty_query -> printf "Empty query\n"
   | Tuples_ok ->
-      fprintf output_chan "Tuples ok\n";
-      fprintf output_chan "%i tuples with %i fields\n" res#ntuples res#nfields;
+      fprintf !(output_chan) "Tuples ok\n";
+      fprintf !(output_chan) "%i tuples with %i fields\n" res#ntuples res#nfields;
       print_endline (String.concat ";" res#get_fnames_lst);
       for tuple = 0 to res#ntuples - 1 do
         for field = 0 to res#nfields - 1 do
-          fprintf output_chan "%s, " (res#getvalue tuple field)
+          fprintf !(output_chan) "%s, " (res#getvalue tuple field)
         done;
         print_newline ()
       done
@@ -69,6 +86,7 @@ let rec dump_res conn =
   | None -> ()
 ;;
 
+let conninfo = !(conn_string);;
 (* everything is done here *)
 let main () =
   let c = new connection ~conninfo () in
@@ -76,7 +94,7 @@ let main () =
   c#set_notice_processor (fun s -> eprintf "postgresql error [%s]\n" s);
   try
    (*let chan= if (Array.length Sys.argv) = 1 then stdin else open_in Sys.argv.(2) in*)
-   let chan= input_chan in
+   let chan= !(input_chan) in
    let lexbuf = Lexing.from_channel chan in
     while true do
 print_string "yadi$ "; flush stdout;
