@@ -318,7 +318,7 @@ let rec idb_inner_extract e1 vh l2 = match vh with
 (* this is used for creating FROM part of SQL statement, hence we skip all predicates that belong to equalities - 30/11/2012 *)
 let rec get_predname_termlist term_list = match term_list with
 		| [] -> []
-		| t::m -> ( if ((get_termtype t) = "relation" || (get_termtype t) = "negation") then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
+		| t::m -> ( if ((get_termtype t) = "relation") then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
 
 
 (*
