@@ -1,8 +1,7 @@
 type token =
-  | VAL of (int)
+  | VAL of (string)
   | RELNAME of (string)
   | VARNAME of (string)
-  | CONSTANT of (string)
   | QMARK
   | DOT
   | IMPLIEDBY

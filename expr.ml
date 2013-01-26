@@ -5,11 +5,11 @@ type expr =
   	| Prog of stt list
 and term =
 	| Rel of rterm
-	| Equal of string * int
-	| LessThan of string * int
-	| GreaterThan of string * int
-	| LessOrEqual of string * int
-	| GreaterOrEqual of string * int
+	| Equal of string * string
+	| LessThan of string * string
+	| GreaterThan of string * string
+	| LessOrEqual of string * string
+	| GreaterOrEqual of string * string
 	| Not of term
 and rterm =
 	| Pred of string * string list
@@ -39,11 +39,11 @@ let string_of_rterm r = match r with
 (* support function for smart stringify of the AST - see to_string below *)
 let rec string_of_term t = match t with 
 	| Rel r			-> string_of_rterm r
-	| Equal (s, i)		-> s ^ "=" ^ string_of_int i
-	| LessThan (s, i)	-> s ^ "<" ^ string_of_int i
-	| GreaterThan (s, i)	-> s ^ ">" ^ string_of_int i
-	| LessOrEqual (s, i)	-> s ^ "<=" ^ string_of_int i
-	| GreaterOrEqual (s, i)	-> s ^ ">=" ^ string_of_int i
+	| Equal (s, i)		-> s ^ "=" ^ i
+	| LessThan (s, i)	-> s ^ "<" ^ i
+	| GreaterThan (s, i)	-> s ^ ">" ^ i
+	| LessOrEqual (s, i)	-> s ^ "<=" ^ i
+	| GreaterOrEqual (s, i)	-> s ^ ">=" ^ i
 	| Not t			-> "not " ^ string_of_term t
 ;;
 

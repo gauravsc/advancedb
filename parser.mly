@@ -12,10 +12,10 @@
 
 /* tokens declaration */
 
-%token <int> VAL            /* token with int value    */
+
+%token <string> VAL           /* token with string value    */
 %token <string> RELNAME       /* token with string value */
 %token <string> VARNAME         /* token with string value */
-%token <string> CONSTANT        /* token with string value - constant */
   
 %token QMARK DOT IMPLIEDBY
 %token AND NOT
@@ -23,6 +23,7 @@
 %token LPAREN RPAREN SEP
 %token EOP
 %token ANON   /* fake token to stop the grammar in the fact rule */
+
 
 /* associativity and precedence when needed */
 %nonassoc IMPLIEDBY
@@ -90,7 +91,7 @@
   ;
 
   equality:	
-  VARNAME EQ VAL						{ Equal ($1, $3) }
+  VARNAME EQ VAL					{ Equal ($1, $3) }
 
 
   lessThanInequality:	
@@ -110,8 +111,8 @@
   | term SEP termlist					{ $1 :: $3 } /* \!/ rec. on the right */
 
   term:
-  |VARNAME								{ $1 }
-  |CONSTANT								{ $1 }
+  |VARNAME							{ $1 }
+  |VAL								{ $1 }
   ;
 
   fact:
