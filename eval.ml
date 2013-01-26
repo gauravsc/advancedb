@@ -273,9 +273,11 @@ let rec inner_extract e1 l2 = match l2 with
 	     else if is_boolean h
 	     then List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_value h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)
 	     else if get_termtype e1 = "negation" && get_termtype h != "negation"
-	     then ("not exists (select 1 from " ^ get_predname e1 ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ ")") :: (inner_extract e1 t)
+	     then (if List.length (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) >0   then ("not exists (select 1 from " ^ get_predname e1 ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ ")")::(inner_extract e1 t) else (inner_extract e1 t)  ) 
+
+
 	     else if get_termtype e1 != "negation" && get_termtype h = "negation"
-	     then ("not exists (select 1 from " ^ (get_predname h) ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ " )") :: (inner_extract e1 t) 
+	     then (if List.length (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) >0  then ("not exists (select 1 from " ^ (get_predname h) ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ " )")::(inner_extract e1 t)  else (inner_extract e1 t) ) 
 	     else List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)	     
 );;
 
