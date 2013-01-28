@@ -110,21 +110,6 @@ let rec abc term_list = match term_list with
 		| t::m -> (get_predname(t) ::(",":: (List.append (get_varlist(t)) (abc(m))))) ;;
  
 
-(* This function filters all FACT statements  
-  NOT FINISHED 
-let process_fact e = match e with
-	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
-		match sl with 
-			| Fact r -> (*"drop table if exists " ^ get_predname (Rel r) ^ "; " ^ 
-				    "create table " ^ get_predname (Rel r) ^ " ( " ^ (String.concat "," (get_rtermlist (r))) ^ " ); " ^*)
-				     "insert into " ^ get_predname (Rel r) ^ " values ( '" ^ (String.concat "','" (get_rtermlist (r))) ^ "');"
-			| _				-> invalid_arg "get_idb"
-		) (List.filter (fun r -> match r with
-									| Fact _ 	-> true 
-									| _ 			-> false) sttl)) []
-	)
-;;
-*)
 
 
 (* The purpose of this function is to retrieve a string that would act as WHERE clause in final SELECT statement. So far it covers only equalities based on joins between the predicates i.e. tables 
@@ -174,12 +159,14 @@ let is_constant const = try ignore (Str.search_forward (Str.regexp "\(['\'']\(.*
 
 
 
-let get_boolean_sign tp = match tp with
+let get_sign tp = match tp with
+	| "relation" -> "="	
 	| "equality" -> "="
 	| "LessThan" -> "<"
 	| "GreaterThan" -> ">"
 	| "LessOrEqual" -> "<="
 	| "GreaterOrEqual" -> ">="
+	| "negation" -> "!="  
 ;;
 
 
@@ -207,7 +194,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ s2 ^
+				       then s1 ^ ".a" ^ string_of_int r ^ (get_sign tp2) ^ s2 ^
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -216,7 +203,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 			|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> (match tp2 with 
 				("relation"|"negation") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s2 ^ ".a" ^ string_of_int k ^ (get_boolean_sign tp1) ^ s1 ^
+				       then s2 ^ ".a" ^ string_of_int k ^ (get_sign tp1) ^ s1 ^
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -242,7 +229,7 @@ let rec find_i s1 e1 tp1 s2 l2 tp2 r k =
 				       else find_i s1 e1 tp1 s2 t2 tp2 r (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> 
 		                       (if String.compare e1 h2 = 0 
-				       then s1 ^ ".a" ^ string_of_int r ^ (get_boolean_sign tp2) ^ s2 ^ 
+				       then s1 ^ ".a" ^ string_of_int r ^ (get_sign tp2) ^ s2 ^ 
 						(if String.compare (find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) "" != 0 
 				         	then " and "^(find_i s1 e1 tp1 s2 t2 tp2 r (k+1)) 
 					 	else find_i s1 e1 tp1 s2 t2 tp2 r (k+1) ) 
@@ -262,9 +249,18 @@ let rec find_intersection s1 l1 tp1 s2 l2 tp2 r =
                      );; 
 
 
+let rec handle_constants s1 l1 tp1 r =
+     match l1 with 
+       | [] -> []
+       | h1::t1 -> (if is_constant h1 = 1 then (s1 ^ ".a" ^ string_of_int r ^ (get_sign tp1) ^ h1) :: handle_constants s1 t1 tp1 (r+1)
+				       	  else handle_constants s1 t1 tp1 (r+1)
+                     );; 
+
+
+
 (* koristim trik za terme oblika EQUAL tako sto u ime predikata zapravo cuvam vrijednost varijable*)
 let rec inner_extract e1 l2 = match l2 with
-	| [] -> []
+	| [] -> (if (is_boolean e1) then [] else handle_constants (get_predname e1) (get_varlist e1) (get_termtype e1) 0)  
 	| h::t -> 
 	     (if (is_boolean e1) && (is_boolean h)
 	     then List.append (find_intersection (get_value e1) (get_varlist e1) (get_termtype e1) (get_value h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)
@@ -273,9 +269,10 @@ let rec inner_extract e1 l2 = match l2 with
 	     else if is_boolean h
 	     then List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_value h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)
 	     else if get_termtype e1 = "negation" && get_termtype h != "negation"
-	     then ("not exists (select 1 from " ^ get_predname e1 ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ ")") :: (inner_extract e1 t)
+	     then (if List.length (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) >0   then ("not exists (select 1 from " ^ get_predname e1 ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ ")")::(inner_extract e1 t) else (inner_extract e1 t)  ) 
+
 	     else if get_termtype e1 != "negation" && get_termtype h = "negation"
-	     then ("not exists (select 1 from " ^ (get_predname h) ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ " )") :: (inner_extract e1 t) 
+	     then (if List.length (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) >0  then ("not exists (select 1 from " ^ (get_predname h) ^ " where " ^ (String.concat " and " (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0)) ^ " )")::(inner_extract e1 t)  else (inner_extract e1 t) ) 
 	     else List.append (find_intersection (get_predname e1) (get_varlist e1) (get_termtype e1) (get_predname h) (get_varlist h) (get_termtype h) 0) (inner_extract e1 t)	     
 );;
 
@@ -292,17 +289,30 @@ let rec outer_extract l = match l with
 let rec idb_find_i s1 vh1 s2 l2 tp2 k =
      match l2 with [] -> ""
        	  | h2::t2 -> (match tp2 with 
-				|("relation"|"negation") -> 
+				|"relation" -> 
 		                       (if String.compare vh1 h2 = 0 
 				        then s2 ^ ".a" ^ string_of_int k  
                       		        else idb_find_i s1 vh1 s2 t2 tp2 (k+1))
+				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual"|"negation") -> ""
+			);;
+
+let rec idb_find_i_only_one s1 vh1 s2 l2 tp2 k =
+     match l2 with [] -> ""
+       	  | h2::t2 -> (match tp2 with 
+				|("relation"|"negation")-> 
+		                       (if String.compare vh1 h2 = 0 
+				        then s2 ^ ".a" ^ string_of_int k  
+                      		        else idb_find_i_only_one s1 vh1 s2 t2 tp2 (k+1))
 				|("equality"|"LessThan"|"GreaterThan"|"LessOrEqual"|"GreaterOrEqual") -> ""
 			);;
 
 
 let rec idb_find_intersection vh1 s1 l2 =
      match l2 with [] -> []
-       	  | hl1::hl2 -> (if (String.compare (idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0) "") !=0 then idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0 :: [] else idb_find_intersection vh1 s1 hl2);;
+       	  | hl1::hl2 -> (match hl2 with 
+			  | [] -> if (String.compare (idb_find_i_only_one s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0) "") !=0 then idb_find_i_only_one s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0 :: [] else []
+			  | _ ->  if (String.compare (idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0) "") !=0 then idb_find_i s1 vh1 (get_predname hl1) (get_varlist hl1) (get_termtype hl1) 0 :: [] else idb_find_intersection vh1 s1 hl2
+                        );;
  
 
 let rec idb_inner_extract e1 vh l2 = match vh with
@@ -316,7 +326,10 @@ let rec idb_inner_extract e1 vh l2 = match vh with
 (* this is used for creating FROM part of SQL statement, hence we skip all predicates that belong to equalities - 30/11/2012 *)
 let rec get_predname_termlist term_list = match term_list with
 		| [] -> []
-		| t::m -> ( if ((get_termtype t) = "relation" || (get_termtype t) = "negation") then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m));;
+		| t::m -> (match m with 
+			    | [] -> if ((get_termtype t) = "relation" || (get_termtype t) = "negation") then (get_predname t)::[] else []
+			    | _ -> if ((get_termtype t) = "relation") then List.append (get_predname_termlist m) ((get_predname t)::[]) else (get_predname_termlist m)
+                          );;
 
 
 (*
@@ -329,6 +342,12 @@ old version:
 let rec attribute_name_head q i = match q with
 	| 0 -> [] 
 	| m -> (("a" ^ string_of_int (i-q) ):: attribute_name_head (q-1) i)
+;; 
+
+
+let rec attribute_name_head_with_type q i = match q with
+	| 0 -> [] 
+	| m -> (("a" ^ string_of_int (i-q) ^ " text"):: attribute_name_head (q-1) i)
 ;; 
 
 
@@ -413,13 +432,36 @@ attribute_name_head -> used to create list of attribute name i.e. a0, a1, a2
 			| Query q 	-> if (check_predicate (!a) (get_predname (Rel q)) = 1) then 
 						"select * from " ^ (get_predname (Rel q))  ^ ";"
 					   else ""
+			| Fact r -> "drop table if exists " ^ get_predname (Rel r) ^ "; " ^ 
+				    "create table " ^ get_predname (Rel r) ^ " ( " ^ (String.concat "," (attribute_name_head_with_type (List.length (get_varlist (Rel r))) (List.length (get_varlist (Rel r))) )) ^ " ); " ^
+				     "insert into " ^ get_predname (Rel r) ^ " values ( " ^ (String.concat "," (get_rtermlist (r))) ^ ");"
 			| _		-> invalid_arg "get_idb"
 		) (List.rev (List.filter (fun r -> match r with
 									| Rule (_, _) 	-> true 
 									| Query _ 	-> true 
+									| Fact _        -> true
 									| _ 			-> false) sttl))) [] 
 	)
 ;;
+
+
+
+
+(* This function filters all FACT statements  
+  NOT FINISHED 
+let process_fact e = match e with
+	| Prog sttl	-> ( List.fold_right (fun s acc -> s::acc) (List.map (fun sl ->
+		match sl with 
+			| Fact r -> (*"drop table if exists " ^ get_predname (Rel r) ^ "; " ^ 
+				    "create table " ^ get_predname (Rel r) ^ " ( " ^ (String.concat "," (get_rtermlist (r))) ^ " ); " ^*)
+				     "insert into " ^ get_predname (Rel r) ^ " values ( '" ^ (String.concat "','" (get_rtermlist (r))) ^ "');"
+			| _				-> invalid_arg "get_idb"
+		) (List.filter (fun r -> match r with
+									| Fact _ 	-> true 
+									| _ 			-> false) sttl)) []
+	)
+;;
+*)
 
 
 
